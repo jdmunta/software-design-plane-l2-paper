@@ -1,0 +1,84 @@
+
+run demo  intent=enterprise_llm_gateway  generator=deterministic  reviewers=analytic,adversarial
+
+design     architecture                                 p99ms     rps    err    $/M  score  violations
+----------------------------------------------------------------------------------------------------------------------
+d1         Latency-optimised request path                10.7   11194 0.00%   6.68  0.890  -
+d2         Operations-minimal plane                      23.5   11194 0.00%   9.83  0.834  -
+d3         Isolation-maximal celled plane                20.4   11194 0.00%  10.44  0.880  -
+d4         Cost-floor plane                              10.7   11194 0.00%   3.99  0.814  -
+d5         Availability-maximal redundant plane          15.7   11194 0.00%  10.46  0.893  -
+
+note: search returned 5 of 6 requested candidates. 1 was discarded as too close to an accepted candidate rather than padding the count.
+
+diversity
+  mean_pairwise_distance     0.469
+  min_pairwise_distance      0.333
+  distinct_fingerprints      5.000
+  distinct_request_paths     5.000
+  candidates_requested       6.000
+  candidates_returned        5.000
+
+evaluator disagreement (higher = evaluators genuinely differ)
+  _mean                      0.130
+  complexity                 0.029
+  correctness                0.000
+  cost                       0.281
+  maintainability            0.083
+  performance                0.287
+  reliability                0.196
+  security                   0.033
+
+evaluator independence — is the second opinion a second opinion?
+  correctness      no signal   rank agreement 100%   neither evaluator separates any candidate on this dimension — both return a constant, so it carries no information about this candidate set and their independence cannot be assessed from it
+  security         independent  rank agreement  60%   disagree on 4 of 10 candidate pairs
+  reliability      independent  rank agreement  60%   disagree on 4 of 10 candidate pairs
+  performance      independent  rank agreement  10%   disagree on 9 of 10 candidate pairs
+  cost             independent  rank agreement  70%   disagree on 3 of 10 candidate pairs
+  complexity       independent  rank agreement  20%   disagree on 8 of 10 candidate pairs
+  maintainability  independent  rank agreement  60%   disagree on 4 of 10 candidate pairs
+
+measured capacity (ramped until the design sheds)
+  d1        35,469 rps   3.55x declared  limited by compute
+  d2        22,578 rps   2.26x declared  limited by compute
+  d3        35,469 rps   3.55x declared  limited by compute
+  d4        22,578 rps   2.26x declared  limited by compute
+  d5        44,844 rps   4.48x declared  limited by compute
+
+model calibration: how far the plane's own estimates were from what was measured
+  (positive = the model was pessimistic; near zero = the model is carrying its weight)
+  slo_availability           mean -0.079   worst -0.197
+  slo_gateway_p99            mean +0.001   worst +0.001
+  slo_throughput             mean -0.001   worst -0.003
+
+robustness to the catalog's own uncertainty (64 resampled catalogs)
+          frontier  rejected          security     performance            cost
+  d1         100%        0%         1.00 (fact)    0.77-0.84       0.72-0.81   
+  d2          98%        2%         1.00 (fact)    0.78-0.88       0.72-0.81   
+  d3          95%        0%         1.00 (fact)    0.80-0.85       0.62-0.74   
+  d4          98%        2%         0.92 (fact)    0.77-0.88       0.74-0.82   
+  d5         100%        0%         1.00 (fact)    0.80-0.85       0.62-0.72   
+
+  what this changes:
+    - d2 is disqualified in 2% of resampled catalogs — it sits on a hard constraint boundary, not clear of it.
+    - d4 is disqualified in 2% of resampled catalogs — it sits on a hard constraint boundary, not clear of it.
+    - 7 candidate pair(s) are not separable on performance given catalog uncertainty; the point-estimate ordering there is not evidence.
+    - 6 candidate pair(s) are not separable on complexity given catalog uncertainty; the point-estimate ordering there is not evidence.
+    - 4 candidate pair(s) are not separable on maintainability given catalog uncertainty; the point-estimate ordering there is not evidence.
+    - 2 candidate pair(s) are not separable on cost given catalog uncertainty; the point-estimate ordering there is not evidence.
+
+  20 of 27 catalog rows are unverified estimates; every number above inherits that.
+
+governance
+  decision : PROMOTE (approval required)
+  selected : enterprise_llm_gateway-d5
+  frontier : enterprise_llm_gateway-d1, enterprise_llm_gateway-d2, enterprise_llm_gateway-d3, enterprise_llm_gateway-d4, enterprise_llm_gateway-d5
+  because  : policy does not permit unattended promotion
+  frontier members and the axis each one alone owns:
+    d1     security, reliability, performance
+    d2     security
+    d3     security, reliability
+    d4     cost
+    d5     security, reliability, complexity, maintainability
+
+artifacts written to runs/demo

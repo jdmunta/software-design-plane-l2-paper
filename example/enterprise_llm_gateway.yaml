@@ -1,0 +1,169 @@
+# Intent IR for the white paper's worked example (sections 2 and 7).
+#
+# Note what is NOT here: Go, Redis, PostgreSQL, Kubernetes, Prometheus,
+# microservices, serverless. Those are candidate mechanisms, and the design
+# plane's job is to choose among them against this intent. A human who writes
+# them here has re-entered L1.5.
+
+id: enterprise_llm_gateway
+version: "1.0"
+goal: Enterprise LLM inference gateway
+description: >
+  An OpenAI-compatible inference gateway fronting multiple model providers for
+  many tenants. Stated as outcomes, invariants and economics; the architecture
+  is deliberately left open.
+
+capabilities:
+  - id: cap_chat_completion
+    description: Serve OpenAI-compatible chat completion requests
+    on_request_path: true
+    requires_properties: [tenant_authentication, request_routing]
+  - id: cap_embeddings
+    description: Serve embedding requests
+    on_request_path: true
+    requires_properties: [tenant_authentication, request_routing]
+  - id: cap_model_routing
+    description: Route each request to an appropriate model provider, with failover
+    on_request_path: true
+    requires_properties: [request_routing, connection_pooling]
+
+scale:
+  sustained_rps: 10000
+  peak_rps: 18000
+  tenants: 400
+
+slos:
+  - id: slo_gateway_p99
+    metric: latency_p99_ms
+    comparator: "<="
+    target: 500
+    unit: ms
+    severity: hard
+    rationale: >
+      Gateway-added overhead only, excluding time spent at the model provider.
+      Measured at the gateway boundary so provider variance cannot mask it.
+  - id: slo_availability
+    metric: availability
+    comparator: ">="
+    target: 0.9999
+    severity: hard
+    rationale: Four nines measured on the gateway's own request path.
+  - id: slo_throughput
+    metric: throughput_rps
+    comparator: ">="
+    target: 10000
+    unit: rps
+    severity: hard
+  - id: slo_error_rate
+    metric: error_rate
+    comparator: "<="
+    target: 0.001
+    severity: hard
+    rationale: Requests shed or failed by the gateway itself.
+  - id: slo_recovery
+    metric: recovery_time_s
+    comparator: "<="
+    target: 300
+    unit: s
+    severity: soft
+    rationale: >
+      Soft: a slow worst-case recovery is a trade-off to weigh, not an
+      automatic disqualification.
+
+invariants:
+  - id: inv_no_plaintext_secrets
+    statement: Provider credentials are never stored in plaintext
+    requires_properties: [no_plaintext_secrets]
+    severity: hard
+  - id: inv_credentials_never_logged
+    statement: Credentials never appear in logs or telemetry
+    requires_properties: [secret_redaction]
+    severity: hard
+  - id: inv_tenant_isolation
+    statement: Tenant data never crosses a tenant boundary
+    requires_properties: [tenant_isolation_strict]
+    # Declaring the guarded data class is what upgrades this from "a mechanism
+    # that could enforce it is present somewhere" to "enforcement lies on the
+    # path the data actually takes, before the data leaves".
+    applies_to_data_class: tenant_payload
+    severity: hard
+  - id: inv_auditable
+    statement: Every provider request is auditable
+    requires_properties: [audit_trail]
+    severity: hard
+  - id: inv_measurable
+    statement: Every declared objective is measurable in production
+    requires_properties: [slo_measurement]
+    severity: hard
+  - id: inv_quota_enforced
+    statement: Per-tenant quota is enforced before a provider is called
+    requires_properties: [quota_enforcement]
+    severity: soft
+
+cost:
+  max_per_million_requests_usd: 20
+  severity: hard
+
+policies:
+  - id: pol_promotion
+    kind: promotion
+    statement: >
+      No design is promoted without empirical evidence for every hard objective,
+      and no design is promoted unattended.
+    parameters:
+      require_shadow_evidence: true
+      auto_promote: false
+      max_evaluator_disagreement: 0.25
+  - id: pol_search_bound
+    kind: search_bound
+    statement: Architecture search is bounded so exploration stays economical.
+    parameters:
+      local_search_steps: 80
+      max_candidate_similarity: 0.75
+      max_resynthesis_candidates: 3
+  - id: pol_blast_radius
+    kind: blast_radius
+    statement: A promotion may not change more than one architectural tier at a time.
+    parameters:
+      max_changed_roles: 2
+      canary_fraction: 0.05
+  - id: pol_approval
+    kind: approval
+    statement: Re-synthesis triggered by runtime evidence requires human approval.
+    parameters:
+      resynthesis_requires_approval: true
+  - id: pol_rollback
+    kind: rollback
+    statement: Every promotion must be reversible within one deployment cycle.
+    parameters:
+      max_rollback_minutes: 15
+
+# Governance, not physics: how a human wants trade-offs broken on the frontier.
+preference:
+  security: 1.0
+  reliability: 0.9
+  performance: 0.8
+  correctness: 1.0
+  cost: 0.6
+  complexity: 0.5
+  maintainability: 0.5
+
+workload:
+  arrival: bursty
+  burst_factor: 1.8
+  burst_duty_cycle: 0.12
+  upstream_provider_p50_ms: 320
+  upstream_provider_p99_ms: 1800
+  classes:
+    - capability_id: cap_chat_completion
+      share: 0.72
+      work_factor: 1.0
+      payload_kb: 8
+    - capability_id: cap_embeddings
+      share: 0.25
+      work_factor: 0.45
+      payload_kb: 2
+    - capability_id: cap_model_routing
+      share: 0.03
+      work_factor: 1.4
+      payload_kb: 12

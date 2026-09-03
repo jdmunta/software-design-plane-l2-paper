@@ -1,0 +1,30 @@
+
+reviewing hand-authored-gateway against intent enterprise_llm_gateway
+  Hand-authored gateway — A conventional self-managed data plane with celled tenant isolation.
+  request path: envoy_gateway -> jwt_verifier -> distributed_token_bucket -> no_cache -> go_service_k8s -> redis_cluster
+
+where guarded data passes enforcement
+  inv_tenant_isolation     VIOLATED
+    provider_call: tenant_payload leaves via `compute` (at hop 4) with no `tenant_isolation_strict` upstream of it
+    present but off the request path: isolation
+
+evidence vector
+  correctness        1.000
+  security           0.917
+  reliability        0.948
+  performance        0.985
+  cost               0.669
+  complexity         0.332
+  maintainability    0.622
+
+simulated: p99 13.5 ms  error rate 0.000%  $6.87/M
+measured capacity: 31,953 rps (3.20x declared, limited by ingress, compute)
+
+verdict
+  REJECTED — violates inv_tenant_isolation
+  of which structural facts about the design: inv_tenant_isolation
+  not demonstrated: inv_tenant_isolation
+
+compared against run demo
+  not comparable: the submitted design violates hard constraints, so it is disqualified rather than ranked
+  dominated by: d1

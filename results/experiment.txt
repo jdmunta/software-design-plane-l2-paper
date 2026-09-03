@@ -1,0 +1,42 @@
+==============================================================================
+MINIMAL FALSIFIABLE EXPERIMENT — enterprise_llm_gateway
+==============================================================================
+
+               req%    p99ms   cap rps     err     $/M  infra  cands  evals  review
+arm A          90.0     20.2    26,094  0.00%    6.37     10      1      1       1
+arm B         100.0     10.8    35,469  0.00%    6.68     10      1      1       1
+arm T         100.0     15.5    44,844  0.00%   10.46     10      5     10       5
+
+arm A: Human-selected architecture (paper section 2 prescription)
+        selected: enterprise_llm_gateway-baselineA
+        violates: inv_tenant_isolation
+        One architecture, one evaluator, no alternatives to compare against.
+arm B: One AI-generated architecture, single evaluator
+        selected: enterprise_llm_gateway-d1
+        Generation without search: the first architecture proposed is the architecture, and nothing independent challenges it.
+arm T: L2 multi-candidate search with independent evaluation
+        selected: enterprise_llm_gateway-d5
+        Decision: promote_with_approval. policy does not permit unattended promotion
+
+27% of candidate/dimension pairs are not separable under catalog resampling.
+
+FINDINGS
+------------------------------------------------------------------------------
+  * Search produced materially different architectures: mean pairwise mechanism distance 0.47, 5 distinct request paths across 5 candidates.
+  * Evaluators disagree by 0.130 on average, most on 'performance' (0.287) — the dimension where structural and analytic reasoning genuinely diverge.
+  * ['correctness'] carry no information about this candidate set — every evaluator returns a constant, so those dimensions neither separate candidates nor test evaluator independence.
+  * 27% of candidate/dimension pairs are not separable under catalog resampling; the rest of the ordering survives it.
+  * L2 rejected constraint violations that the human baseline carried into the design: ['inv_tenant_isolation']. These are structural property checks, not judgement calls.
+  * Treatment vs baseline A — better on ['requirements satisfied', 'p99 latency', 'measured capacity']; worse on ['cost'].
+  * Treatment vs baseline B — better on ['measured capacity']; worse on ['p99 latency', 'cost'].
+  * NEGATIVE — human review cost scaled 5.0x: a reviewer must compare 5 frontier candidates rather than approve one. Any quality gain has to be worth that.
+
+VERDICT
+------------------------------------------------------------------------------
+  SUPPORTED on this intent: multi-candidate search with independent evaluation improved the frontier without increasing unacceptable risk, at 5.0x review cost. 1 negative signal(s) remain.
+
+CAVEATS
+------------------------------------------------------------------------------
+  * Every performance, cost and availability figure is produced by a model or a simulation in this harness, not by a deployed system. Section 14 of the paper calls for isolated real environments; substituting them changes the numbers but not the structure of the comparison.
+  * Baseline A encodes the paper's own section 2 prescription. A different human baseline may change the result; pass baseline_a_overrides to test that.
+  * Mechanism characteristics come from a hand-written catalog. The comparison is only as good as those estimates — which is why the separability finding above matters more than any single measurement.
