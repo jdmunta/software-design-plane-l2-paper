@@ -2,16 +2,24 @@
 
 ### From Spec-Driven Development to Intent-Driven Software Synthesis
 
-**Jagadesh B. Munta · White Paper, Version 1.0 · 2026**
+**Jagadesh Babu Munta · White Paper, Version 1.0 · August 2026**
 
-📄 **[Read the paper](paper/software-design-plane-l2.pdf)**
+📄 **[Read the paper](paper/software-design-plane-l2.pdf)** · 11 pages
+
+> Humans govern intent. Machines explore designs. Independent evaluators
+> challenge them. Evidence determines what is safe to promote.
 
 ---
 
 Spec-driven development moved the unit of human work from code to specification.
 It left the architecture where it was: chosen by a human, up front, largely by
-precedent, and defended afterwards. This paper asks what happens when
-architecture becomes an **output of computation** rather than an input to it.
+precedent, and defended afterwards. This paper asks what abstraction comes after
+specifications.
+
+It does **not** claim novelty for the generic idea of "intent → design" — GitHub
+Spec Kit and Kiro already generate technical designs from requirements. The
+claim is narrower and stronger: L2 makes architectural alternatives *first-class
+computational objects* and requires **evidence-driven selection across them**.
 
 Humans declare capabilities, constraints, invariants, policies and measurable
 outcomes. A design plane searches a bounded space of architectures, evaluates
@@ -32,20 +40,28 @@ quoted below is output from that program, not illustration.
 
 ## The maturity model
 
-| | | |
-|---|---|---|
-| **L1** | Code-driven | The artifact is code. Design lives in people's heads and in review. |
-| **L1.5** | Spec-driven | The artifact is a specification; an agent writes the code. **The architecture is still chosen by a human, up front.** |
-| **L2** | **Intent-driven** | The artifact is *intent*. Architecture is searched, evaluated against evidence, and selected under human governance. |
-| **L3** | Continuous design | Runtime evidence feeds back into intent; the design is re-derived when reality contradicts it. |
+| level | primary source | human focus | machine role | defining shift |
+|---|---|---|---|---|
+| **L0** | Code | Design + implementation | Tools | Human authors implementation |
+| **L1** | Prompt + code | Architecture + review | Generate code | AI accelerates implementation |
+| **L1.5** | Specification | What before how | Plan + implement | Spec becomes durable source |
+| **L2** | **Intent + evidence** | Outcomes + governance | Search + evaluate + synthesize | **Architecture becomes search space** |
+| **L3** | Intent + runtime feedback | Policy + objectives | Re-synthesize under bounds | Continuous design |
 
-Most of what is currently called "AI-native development" is L1.5. The move to L2
-is not a better code generator — it is putting the architecture decision itself
-under evidence.
+L1.5 reflects contemporary spec-driven workflows; **L2 and L3 are proposed terms
+in this paper**. Most of what is currently called "AI-native development" sits at
+L1.5. The move to L2 is not a better code generator — it is putting the
+architecture decision itself under evidence.
 
 ## The three abstractions
 
-**Intent IR** — outcomes, not mechanisms. The worked example declares 10,000
+**Software Intent Graph (SIG)** — goals, capabilities, constraints, invariants,
+SLOs, policies, risks, design decisions, evaluators, implementation artifacts and
+runtime evidence, connected. Its purpose is bidirectional traceability: from a
+component back to the reason it exists, and from a requirement forward to the
+evidence that demonstrates whether it is satisfied.
+
+Intent enters it as outcomes, not mechanisms. The worked example declares 10,000
 sustained RPS, p99 gateway overhead under 500 ms, 99.99% availability, strict
 tenant isolation, no plaintext credentials, full auditability, and a
 $20-per-million cost envelope. It names no technology. Invariants are
@@ -62,7 +78,7 @@ mechanisms declare which properties they provide:
 
 The full worked example is in [`example/`](example/enterprise_llm_gateway.yaml).
 
-**Design IR** — architecture as a structured object that can be generated,
+**Design IR** — architecture as a machine-addressable object that can be generated,
 compared, scored, rejected and regenerated: components and the mechanism
 realising each, interfaces, annotated data flows, deployment topology, expected
 failure modes with declared frequency and recovery time, and traceability back
@@ -227,6 +243,7 @@ Open an issue, or reach me on LinkedIn.
   title  = {Software Design Plane L2: From Spec-Driven Development to
             Intent-Driven Software Synthesis},
   year   = {2026},
+  month  = {August},
   type   = {White Paper},
   number = {Version 1.0}
 }
