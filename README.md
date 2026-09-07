@@ -33,8 +33,12 @@ Intent ─▶ Synthesize ─▶ Evaluate ─▶ Verify ─▶ Operate ─▶ Obs
    └──────────────────── Software Intent Graph ◀── Evidence Plane ─────────┘
 ```
 
-The argument is accompanied by a working reference implementation. Everything
-quoted below is output from that program, not illustration.
+The paper is explicitly **a technical vision and research agenda**, not a report
+of production results: L2 and L3 are proposed terms, and claims about future
+capability are stated as hypotheses. A working reference implementation was
+built afterwards to find out which of them survive contact with a running
+program. Everything quoted below under *What a cycle produces* and *Six results*
+is output from that implementation, not from the paper.
 
 ---
 
@@ -53,6 +57,19 @@ in this paper**. Most of what is currently called "AI-native development" sits a
 L1.5. The move to L2 is not a better code generator — it is putting the
 architecture decision itself under evidence.
 
+## Where this sits relative to prior work
+
+The paper is explicit that it composes established lines of work rather than
+claiming any of them is new:
+
+| area | established idea | what L2 borrows | proposed extension |
+|---|---|---|---|
+| Spec-driven development | Structured intent drives design/implementation | Durable specs, guardrails, agent workflows | Architecture alternatives + evidence-driven selection |
+| Program synthesis | Construct programs satisfying specifications | Search + verification | System/architecture-level synthesis |
+| Search-based SE | Optimize engineering decisions under trade-offs | Multi-objective search | Architecture as a primary search object |
+| Autonomic computing | High-level objectives guide self-management | Feedback + policy | Design-space adaptation |
+| Self-adaptive systems | Runtime adaptation with assurances | Feedback loops, adaptation, assurance | Re-synthesis of architecture under bounded governance |
+
 ## The three abstractions
 
 **Software Intent Graph (SIG)** — goals, capabilities, constraints, invariants,
@@ -63,8 +80,9 @@ evidence that demonstrates whether it is satisfied.
 
 Intent enters it as outcomes, not mechanisms. The worked example declares 10,000
 sustained RPS, p99 gateway overhead under 500 ms, 99.99% availability, strict
-tenant isolation, no plaintext credentials, full auditability, and a
-$20-per-million cost envelope. It names no technology. Invariants are
+tenant isolation, complete auditability, zero plaintext credential storage,
+rolling upgrades without service interruption, and a $20-per-million cost
+envelope. It names no technology. Invariants are
 machine-checkable because they say which *properties* they require, and
 mechanisms declare which properties they provide:
 
@@ -98,6 +116,30 @@ A model judgement may never disqualify a candidate. Only deterministic checks
 may. This separation is what stops "the AI said it was fine" from becoming
 evidence.
 
+## The reference architecture
+
+```
+INTENT PLANE: goals • capabilities • SLOs • constraints • invariants • policies
+                                    ↓
+                      SOFTWARE INTENT GRAPH
+                                    ↓
+DESIGN PLANE:         generate • search • transform • compare
+                                    ↓
+EVALUATION PLANE:     correctness • security • reliability • performance • cost
+                                    ↓
+IMPLEMENTATION PLANE: coding agents • IaC • tests • configuration
+                                    ↓
+VERIFICATION PLANE:   test • simulate • attack • benchmark • fault injection
+                                    ↓
+              SHADOW RUNTIME ──▶ PRODUCTION
+                                    ↓
+      EVIDENCE PLANE ────────▶ SOFTWARE INTENT GRAPH
+```
+
+Note where the implementation plane sits: **beneath** the design plane. That is
+the paper's structural claim about coding agents — they become implementation
+backends under a control plane, not the top of the stack.
+
 ## What a cycle produces
 
 Five architectures for one intent, each offered the identical simulated trace:
@@ -128,6 +170,14 @@ only to order candidates already on the frontier.
 Full transcripts: [`results/`](results/).
 
 ## Six results worth arguing with
+
+§14 of the paper names three ways the L2 hypothesis could fail: *architecture
+search produces superficial diversity*, *evaluators correlate too strongly*, or
+*human review cost overwhelms gains*. The implementation was built to be able to
+report all three. It found evidence on two — evaluator correlation (result 2)
+and review cost (result 6) — and cleared the third, measuring a mean pairwise
+mechanism distance of 0.47 across five distinct request paths. Those are the
+paper's own falsification criteria, not objections invented afterwards.
 
 **1 — Presence is not enforcement.** Matching a required property against the
 mechanisms present answers "does this design contain something that *could*
@@ -199,7 +249,28 @@ bought 27% more measured capacity and a frontier, and paid for it in cost, p99
 and **five times the review burden**. That is the honest result, and it is
 reported rather than smoothed.
 
-## What this deliberately does not claim
+## The paper's own non-claims
+
+Stated in §16, before anyone else gets to raise them:
+
+- L2 does **not** claim that architecture generation itself is new.
+- L2 does **not** assume all requirements can be formalized or reduced to scalar
+  metrics.
+- L2 does **not** require autonomous production changes — bounded decision
+  support is a valid and likely early form.
+- LLM-based evaluators can share blind spots with generators; deterministic and
+  heterogeneous evidence is essential.
+- Architecture search can be expensive and may produce **false diversity**.
+- Organizational, regulatory, historical and social constraints may be only
+  partially machine-representable.
+- *Software Design Plane L2*, *Software Intent Graph*, *Design IR* in this
+  composition, *Evidence Plane* and *Continuous Design* are **proposed terms**,
+  not standardized industry nomenclature.
+
+## Limits of the implementation
+
+Separate from the paper's non-claims, and specific to the program that produced
+the numbers above:
 
 - **Nothing is deployed.** Shadow execution, fault injection and the capacity
   ramp are simulation. Real environments would change every number.
@@ -214,6 +285,29 @@ reported rather than smoothed.
 - **The plane stops at a decision.** Implementation — coding agents, IaC,
   generated tests — is where spec-driven tooling already works, and is left to
   it.
+
+## What follows if this is right
+
+- **For engineers**, the centre of gravity moves from selecting mechanisms to
+  defining outcomes, invariants, risk tolerances, evaluation criteria and
+  approval boundaries. The architect defines the *space* within which acceptable
+  architectures may exist.
+- **For coding agents**, the strategic hierarchy changes. They become
+  implementation backends beneath a design control plane that coordinates
+  generators, evaluators, runtime environments and evidence sources.
+- **For repositories**, the source of truth may expand from code to an *intent
+  repository*: goals, constraints, invariants, SLOs, Design IR, evaluation
+  definitions, decision history and evidence. Code remains critical, but becomes
+  one materialization of a governed design.
+
+> The next major abstraction may not be a better programming language or even a
+> better coding agent. It may be the design plane above them.
+
+**Working definition.** *Software Design Plane L2: a software-engineering control
+plane that transforms human-governed intent, constraints, invariants, policies
+and measurable objectives into competing architectural designs; evaluates those
+designs through independent evidence; synthesizes implementations; and
+continuously reconciles running systems against declared intent.*
 
 ## Reference implementation
 
